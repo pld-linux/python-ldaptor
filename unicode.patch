@@ -1,0 +1,84 @@
+From f693f61d6b6a6a53044ad3e5f7a7967bfb95d118 Mon Sep 17 00:00:00 2001
+From: davide colombo <dcolombo@davec.(none)>
+Date: Fri, 18 Feb 2011 12:10:41 +0100
+Subject: [PATCH] fix unicode problem with add contact
+
+---
+ ldaptor/protocols/ldap/ldapsyntax.py | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/ldaptor/protocols/ldap/ldapsyntax.py b/ldaptor/protocols/ldap/ldapsyntax.py
+index 471ffa6..9204d13 100644
+--- a/ldaptor/protocols/ldap/ldapsyntax.py
++++ b/ldaptor/protocols/ldap/ldapsyntax.py
+@@ -7,7 +7,7 @@
+ from ldaptor.protocols import pureldap, pureber
+ from ldaptor.samba import smbpassword
+ from ldaptor import ldapfilter, interfaces, delta, attributeset, entry
+-
++import codecs
+ class PasswordSetAggregateError(Exception):
+     """Some of the password plugins failed"""
+     def __init__(self, errors):
+@@ -393,9 +393,10 @@ def addChild(self, rdn, attributes):
+             ldapAttrType = pureldap.LDAPAttributeDescription(attrType)
+             l = []
+             for value in values:
++                if (isinstance(value, unicode)):
++                    value = value.encode('utf-8')
+                 l.append(pureldap.LDAPAttributeValue(value))
+             ldapValues = pureber.BERSet(l)
+-
+             ldapAttrs.append((ldapAttrType, ldapValues))
+         op=pureldap.LDAPAddRequest(entry=str(dn),
+                                    attributes=ldapAttrs)
+-- 
+1.8.5.1
+
+From 23518aba9f5b3a9cb994511906ba450b3d3f5618 Mon Sep 17 00:00:00 2001
+From: davide colombo <dcolombo@davec.(none)>
+Date: Fri, 18 Feb 2011 12:11:03 +0100
+Subject: [PATCH] fix unicode problem with modify contact
+
+---
+ ldaptor/delta.py | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/ldaptor/delta.py b/ldaptor/delta.py
+index 025fec6..68e165d 100644
+--- a/ldaptor/delta.py
++++ b/ldaptor/delta.py
+@@ -8,7 +8,7 @@
+ from ldaptor import attributeset
+ from ldaptor.protocols import pureldap, pureber
+ from ldaptor.protocols.ldap import ldif, distinguishedname
+-
++import codecs
+ class Modification(attributeset.LDAPAttributeSet):
+     def patch(self, entry):
+         raise NotImplementedError
+@@ -19,10 +19,20 @@ def asLDAP(self):
+         if self._LDAP_OP is None:
+             raise NotImplementedError("%s.asLDAP not implemented"
+                                       % self.__class__.__name__)
++        tmplist = list(self)
++        newlist = []
++        for x in range(len(tmplist)):
++            if (isinstance(tmplist[x], unicode)):
++                value = tmplist[x].encode('utf-8')
++                newlist.append(value)
++            else:
++                value = tmplist[x]
++                newlist.append(value) 
++        
+         return str(pureber.BERSequence([
+             pureber.BEREnumerated(self._LDAP_OP),
+             pureber.BERSequence([ pureldap.LDAPAttributeDescription(self.key),
+-                                  pureber.BERSet(map(pureldap.LDAPString, list(self))),
++                                  pureber.BERSet(map(pureldap.LDAPString, newlist)),
+                                   ]),
+             ]))
+ 
+-- 
+1.8.5.1
+

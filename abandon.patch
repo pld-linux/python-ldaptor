@@ -1,0 +1,133 @@
+From 549f3b2e81735b11aa8c8ce80736772ed9ee36a2 Mon Sep 17 00:00:00 2001
+From: Stefan Andersson <norox81@gmail.com>
+Date: Fri, 3 Feb 2012 11:41:26 +0100
+Subject: [PATCH] Add LDAPAbandonRequest Cherry picked
+ 893b8f9a1dbdb7229849a9bc506bb0fa46491a00 from norox.
+
+---
+ ldaptor/protocols/pureldap.py | 32 ++++++++++++++++++++++++++++++--
+ ldaptor/test/test_pureldap.py | 19 +++++++++++++++++++
+ 2 files changed, 49 insertions(+), 2 deletions(-)
+
+diff --git a/ldaptor/protocols/pureldap.py b/ldaptor/protocols/pureldap.py
+index 974293d..a332de1 100644
+--- a/ldaptor/protocols/pureldap.py
++++ b/ldaptor/protocols/pureldap.py
+@@ -41,6 +41,9 @@ def escape(s):
+     s = s.replace('\0', r'\00')
+     return s
+ 
++class LDAPInteger(BERInteger):
++    pass
++
+ class LDAPString(BEROctetString):
+     pass
+ 
+@@ -1121,9 +1124,33 @@ class LDAPModifyDNResponse(LDAPResult):
+ 
+ #class LDAPCompareResponse(LDAPProtocolResponse):
+ #class LDAPCompareRequest(LDAPProtocolRequest):
+-#class LDAPAbandonRequest(LDAPProtocolRequest):
+-#    needs_answer=0
+ 
++class LDAPAbandonRequest(LDAPProtocolRequest, LDAPInteger):
++    tag = CLASS_APPLICATION|0x10
++    needs_answer=0
++
++    def __init__(self, value=None, id=None, tag=None):
++        """
++        Initialize the object
++
++        l=LDAPAbandonRequest(id=1)
++        """
++        if id is None and value is not None:
++            id = value
++        LDAPProtocolRequest.__init__(self)
++        LDAPInteger.__init__(self, value=id, tag=tag)
++
++    def __str__(self):
++        return LDAPInteger.__str__(self)
++
++    def __repr__(self):
++        if self.tag==self.__class__.tag:
++            return self.__class__.__name__+"(id=%s)" \
++                   %repr(self.value)
++        else:
++            return self.__class__.__name__ \
++                   +"(id=%s, tag=%d)" \
++                   %(repr(self.value), self.tag)
+ 
+ class LDAPOID(BEROctetString):
+     pass
+@@ -1330,4 +1357,5 @@ class LDAPBERDecoderContext(BERDecoderContext):
+         LDAPExtendedResponse.tag: LDAPExtendedResponse,
+         LDAPModifyDNRequest.tag: LDAPModifyDNRequest,
+         LDAPModifyDNResponse.tag: LDAPModifyDNResponse,
++        LDAPAbandonRequest.tag: LDAPAbandonRequest,
+     }
+diff --git a/ldaptor/test/test_pureldap.py b/ldaptor/test/test_pureldap.py
+index 16a6843..869485c 100644
+--- a/ldaptor/test/test_pureldap.py
++++ b/ldaptor/test/test_pureldap.py
+@@ -546,6 +546,25 @@ class KnownValues(unittest.TestCase):
+             + l('foo'))
+          ),
+ 
++        (pureldap.LDAPExtendedRequest,
++         [],
++         {'requestName': '42.42.42',
++          'requestValue': None,
++          },
++         None,
++         [0x40|0x20|23, 1+1+8]
++         + ([0x80|0]
++            + [len('42.42.42')]
++            + l('42.42.42'))
++         ),
++
++        (pureldap.LDAPAbandonRequest,
++         [],
++         {'id': 3},
++         None,
++         [0x40|0x10, 0x01, 3]
++         ),
++
+         (pureldap.LDAPBindRequest,
+          [],
+          {'auth': ('PLAIN', 'test'),
+-- 
+1.8.5.1
+
+From 4d5656fc1fd2a7456357eb1e504e08f55c361aba Mon Sep 17 00:00:00 2001
+From: Stefan Andersson <norox81@gmail.com>
+Date: Mon, 30 Jan 2012 13:48:41 +0100
+Subject: [PATCH] requestValue is optional according to RFC 2251, make it so.
+ added unittest and changed assert
+
+Conflicts:
+
+	ldaptor/protocols/pureldap.py
+	ldaptor/test/test_pureldap.py
+---
+ ldaptor/protocols/pureldap.py | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/ldaptor/protocols/pureldap.py b/ldaptor/protocols/pureldap.py
+index a332de1..aa16138 100644
+--- a/ldaptor/protocols/pureldap.py
++++ b/ldaptor/protocols/pureldap.py
+@@ -1125,6 +1125,11 @@ class LDAPModifyDNResponse(LDAPResult):
+ #class LDAPCompareResponse(LDAPProtocolResponse):
+ #class LDAPCompareRequest(LDAPProtocolRequest):
+ 
++class LDAPBERDecoderContext_LDAPAbandonRequest(BERDecoderContext):
++    Identities = {
++        CLASS_CONTEXT|0x50: BEROctetString,
++        }
++
+ class LDAPAbandonRequest(LDAPProtocolRequest, LDAPInteger):
+     tag = CLASS_APPLICATION|0x10
+     needs_answer=0
+-- 
+1.8.5.1
+

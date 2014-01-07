@@ -1,0 +1,34 @@
+From 9c6facce573820987f1ce591f5530e37422fff81 Mon Sep 17 00:00:00 2001
+From: Adam Goodman <akgood@garglezomper7.local>
+Date: Tue, 21 Jun 2011 16:09:40 -0400
+Subject: [PATCH] fix starttls support
+
+a small bug in the LDAPExtendedRequest constructor was making the
+LDAPStartTLSRequest constructor fail
+---
+ ldaptor/protocols/pureldap.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/ldaptor/protocols/pureldap.py b/ldaptor/protocols/pureldap.py
+index 985fe7f..ee54829 100644
+--- a/ldaptor/protocols/pureldap.py
++++ b/ldaptor/protocols/pureldap.py
+@@ -1180,13 +1180,14 @@ def fromBER(klass, tag, content, berdecoder=None):
+         return r
+     fromBER = classmethod(fromBER)
+ 
+-    def __init__(self, requestName, requestValue=None,
++    def __init__(self, requestName=None, requestValue=None,
+                  tag=None):
+         LDAPProtocolRequest.__init__(self)
+         BERSequence.__init__(self, [], tag=tag)
+         assert requestName is not None
+         assert isinstance(requestName, basestring)
++        assert requestValue is None or isinstance(requestValue, basestring)
+         self.requestName=requestName
+         self.requestValue=requestValue
+ 
+     def __str__(self):
+-- 
+1.8.5.1
+

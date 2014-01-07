@@ -1,0 +1,25 @@
+From 43af9e185728ae3a006cbdea33d41f099f80c45f Mon Sep 17 00:00:00 2001
+From: Edmund Jorgensen <tomheon@gmail.com>
+Date: Tue, 22 May 2012 17:17:08 -0400
+Subject: [PATCH] Fix typo in module name: pureldap -> pureber.
+
+---
+ ldaptor/protocols/ldap/ldapserver.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ldaptor/protocols/ldap/ldapserver.py b/ldaptor/protocols/ldap/ldapserver.py
+index 38ae55c..1512827 100644
+--- a/ldaptor/protocols/ldap/ldapserver.py
++++ b/ldaptor/protocols/ldap/ldapserver.py
+@@ -43,7 +43,7 @@ def dataReceived(self, recd):
+         while 1:
+             try:
+                 o, bytes=pureber.berDecodeObject(self.berdecoder, self.buffer)
+-            except pureldap.BERExceptionInsufficientData: #TODO
++            except pureber.BERExceptionInsufficientData: #TODO
+                 o, bytes=None, 0
+             self.buffer = self.buffer[bytes:]
+             if o is None:
+-- 
+1.8.5.1
+

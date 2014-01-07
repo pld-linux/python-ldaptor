@@ -14,6 +14,12 @@ Source0:	https://codeload.github.com/antong/ldaptor/tar.gz/%{githash}?/python-ld
 Source1:	global.cfg
 Patch0:		%{name}-remove-webui.patch
 Patch1:		%{name}-doc-paths.patch
+Patch2:		deprecated-exception.patch
+Patch3:		module-typo.patch
+Patch4:		sasl.patch
+Patch5:		starttls-fix.patch
+Patch6:		unicode.patch
+Patch7:		abandon.patch
 URL:		https://github.com/antong/ldaptor
 BuildRequires:	python-distribute
 BuildRequires:	rpm-pythonprov
@@ -70,6 +76,12 @@ rm -rf ldaptor/test/web/
 rm -f ldaptor/test/test_webui.*
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
+%patch3 -p1
+%patch4 -p1
+%patch5 -p1
+%patch6 -p1
+%patch7 -p1
 
 %build
 %{__python} setup.py build

@@ -1,0 +1,166 @@
+From f7440e50350710c0355f33d766f2ac10df8f5fd6 Mon Sep 17 00:00:00 2001
+From: Adam Goodman <akgood@garglezomper7.local>
+Date: Tue, 21 Jun 2011 16:04:22 -0400
+Subject: [PATCH] added very basic, low-level support for SASL credentials in
+ the pureldap module
+
+When constructing an LDAPBindRequest, now you can pass 'sasl=True' to
+indicate you're providing SASL, rather than plain, credentials. Then,
+provide the 'auth' parameter as a tuple of (mechanism,
+credentials). For example, if constructing a bind request for an
+Active Directory server, you might do something like:
+
+LDAPBindRequest(dn=..., auth=('GSS-SPNEGO', 'NTLMSSP...'), sasl=True)
+
+(note that 'NTLMSSP' begins an NTLM Negotiate Message)
+
+Also, when parsing server responses (e.g. LDAPBindResponse), the
+serverSaslCreds field will be populated if appropriate.
+
+None of this is exposed in the higher-level interfaces
+(e.g. LDAPClient) yet.
+---
+ ldaptor/protocols/pureldap.py | 47 +++++++++++++++++++++++++++++--------------
+ ldaptor/test/test_pureldap.py |  9 +++++++++
+ 2 files changed, 41 insertions(+), 15 deletions(-)
+
+diff --git a/ldaptor/protocols/pureldap.py b/ldaptor/protocols/pureldap.py
+index 3db3b4c..985fe7f 100644
+--- a/ldaptor/protocols/pureldap.py
++++ b/ldaptor/protocols/pureldap.py
+@@ -115,6 +115,7 @@ class LDAPProtocolResponse(LDAPProtocolOp):
+ class LDAPBERDecoderContext_LDAPBindRequest(BERDecoderContext):
+     Identities = {
+         CLASS_CONTEXT|0x00: BEROctetString,
++        CLASS_CONTEXT|0x03: BERSequence,
+         }
+ 
+ class LDAPBindRequest(LDAPProtocolRequest, BERSequence):
+@@ -125,14 +126,28 @@ def fromBER(klass, tag, content, berdecoder=None):
+                               LDAPBERDecoderContext_LDAPBindRequest(
+             fallback=berdecoder))
+ 
++        sasl = False
++        auth = None
++        if isinstance(l[2], BEROctetString):
++            auth = l[2].value
++        elif isinstance(l[2], BERSequence):
++            auth = (l[2][0].value, l[2][1].value)
++            sasl = True
++
+         r = klass(version=l[0].value,
+                   dn=l[1].value,
+-                  auth=l[2].value,
+-                  tag=tag)
++                  auth=auth,
++                  tag=tag,
++                  sasl=sasl)
+         return r
+     fromBER = classmethod(fromBER)
+ 
+-    def __init__(self, version=None, dn=None, auth=None, tag=None):
++    def __init__(self, version=None, dn=None, auth=None, tag=None, sasl=False):
++        """Constructor for LDAP Bind Request
++
++        For sasl=False, pass a string password for 'auth'
++        For sasl=True, pass a tuple of (mechanism, credentials) for 'auth'"""
++
+         LDAPProtocolRequest.__init__(self)
+         BERSequence.__init__(self, [], tag=tag)
+         self.version=version
+@@ -144,12 +159,18 @@ def __init__(self, version=None, dn=None, auth=None, tag=None):
+         self.auth=auth
+         if self.auth is None:
+             self.auth=''
++            assert(not sasl)
++        self.sasl=sasl
+ 
+     def __str__(self):
++        if not self.sasl:
++            auth_ber = BEROctetString(self.auth, tag=CLASS_CONTEXT|0)
++        else:
++            auth_ber = BERSequence([BEROctetString(self.auth[0]), BEROctetString(self.auth[1])], tag=CLASS_CONTEXT|3)
+         return str(BERSequence([
+             BERInteger(self.version),
+             BEROctetString(self.dn),
+-            BEROctetString(self.auth, tag=CLASS_CONTEXT|0),
++            auth_ber,
+             ], tag=self.tag))
+ 
+     def __repr__(self):
+@@ -159,10 +180,9 @@ def __repr__(self):
+         l.append('auth=%s' % repr(self.auth))
+         if self.tag!=self.__class__.tag:
+             l.append('tag=%d' % self.tag)
++        l.append('sasl=%s' % repr(self.sasl))
+         return self.__class__.__name__+'('+', '.join(l)+')'
+ 
+-
+-
+ class LDAPReferral(BERSequence):
+     tag = CLASS_CONTEXT | 0x03
+ 
+@@ -242,8 +262,8 @@ def __repr__(self):
+             l.append('tag=%d' % self.tag)
+         return self.__class__.__name__+'('+', '.join(l)+')'
+ 
+-class LDAPBindResponse_serverSaslCreds(BERSequence):
+-    tag = CLASS_CONTEXT|0x03
++class LDAPBindResponse_serverSaslCreds(BEROctetString):
++    tag = CLASS_CONTEXT|0x07
+ 
+     pass
+ 
+@@ -268,9 +288,8 @@ def fromBER(klass, tag, content, berdecoder=None):
+         assert 3<=len(l)<=4
+ 
+         try:
+-            if isinstance(l[0], LDAPBindResponse_serverSaslCreds):
+-                serverSaslCreds=l[0]
+-                del l[0]
++            if isinstance(l[3], LDAPBindResponse_serverSaslCreds):
++                serverSaslCreds=l[3]
+             else:
+                 serverSaslCreds=None
+         except IndexError:
+@@ -291,15 +310,13 @@ def fromBER(klass, tag, content, berdecoder=None):
+     fromBER = classmethod(fromBER)
+ 
+     def __init__(self, resultCode=None, matchedDN=None, errorMessage=None, referral=None, serverSaslCreds=None, tag=None):
+-        LDAPResult.__init__(self, resultCode=resultCode, matchedDN=matchedDN, errorMessage=errorMessage, referral=referral, tag=None)
+-        assert self.serverSaslCreds is None #TODO
++        LDAPResult.__init__(self, resultCode=resultCode, matchedDN=matchedDN, errorMessage=errorMessage,
++                            referral=referral, serverSaslCreds=serverSaslCreds, tag=None)
+ 
+     def __str__(self):
+-        assert self.serverSaslCreds is None #TODO
+         return LDAPResult.__str__(self)
+ 
+     def __repr__(self):
+-        assert self.serverSaslCreds is None #TODO
+         return LDAPResult.__repr__(self)
+ 
+ class LDAPUnbindRequest(LDAPProtocolRequest, BERNull):
+diff --git a/ldaptor/test/test_pureldap.py b/ldaptor/test/test_pureldap.py
+index 16a6843..2065ba1 100644
+--- a/ldaptor/test/test_pureldap.py
++++ b/ldaptor/test/test_pureldap.py
+@@ -546,6 +546,15 @@ class KnownValues(unittest.TestCase):
+             + l('foo'))
+          ),
+ 
++        (pureldap.LDAPBindRequest,
++         [],
++         {'auth': ('PLAIN', 'test'),
++          'sasl': True},
++         pureldap.LDAPBERDecoderContext(
++                fallback=pureldap.LDAPBERDecoderContext(fallback=pureber.BERDecoderContext()),
++                inherit=pureldap.LDAPBERDecoderContext(fallback=pureber.BERDecoderContext())),
++         [ord(x) for x in str(pureldap.LDAPBindRequest(auth=('PLAIN', 'test'), sasl=True))]
++         )
+         )
+ 
+     def testToLDAP(self):
+-- 
+1.8.5.1
+

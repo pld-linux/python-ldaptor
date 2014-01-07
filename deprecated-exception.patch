@@ -1,0 +1,36 @@
+From 9ae91b2ba8d7d215e43b98ab37006b2271d20d7c Mon Sep 17 00:00:00 2001
+From: davide colombo <dcolombo@davec.(none)>
+Date: Fri, 18 Feb 2011 12:16:51 +0100
+Subject: [PATCH] Fix deprecated exception error
+
+---
+ ldaptor/protocols/ldap/ldaperrors.py | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/ldaptor/protocols/ldap/ldaperrors.py b/ldaptor/protocols/ldap/ldaperrors.py
+index ef609a3..b56d688 100644
+--- a/ldaptor/protocols/ldap/ldaperrors.py
++++ b/ldaptor/protocols/ldap/ldaperrors.py
+@@ -39,6 +39,11 @@ def __init__(self, msg):
+         pass
+ 
+ class LDAPException(Exception, LDAPResult):
++
++    def _get_message(self): return self.__message     
++    def _set_message(self, value): self.__message = value
++    message = property(_get_message, _set_message)
++    
+     def __init__(self, message=None):
+         Exception.__init__(self)
+         self.message=message
+@@ -52,7 +57,6 @@ def __str__(self):
+         else:
+             return 'Unknown LDAP error %r' % self
+ 
+-
+ class LDAPUnknownError(LDAPException):
+     resultCode=None
+ 
+-- 
+1.8.5.1
+
