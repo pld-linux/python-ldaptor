@@ -1,0 +1,52 @@
+Update paths in documentation source files for compilation on newest Fedora.
+
+Author: Jan Vcelak <jvcelak@redhat.com>
+
+diff --git a/doc/Makefile b/doc/Makefile
+index aba2c84..3896f44 100644
+--- a/doc/Makefile
++++ b/doc/Makefile
+@@ -38,7 +38,7 @@ rsync: $(GENERATED)
+ $(DOCBOOK:%.xml=%/index.html): %/index.html: %.xml
+ 	install -d -m0755 '$(@D)'
+ 	xsltproc  --nonet \
+-		/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/xhtml/docbook.xsl \
++		/usr/share/sgml/docbook/xsl-stylesheets/xhtml/docbook.xsl \
+ 		$< \
+ 		>$@.tmp
+ 	mv $@.tmp $@
+@@ -110,8 +110,8 @@ $(SLIDES:%.xml=%/index.html): %/index.html: %.xml \
+ 	addressbook-slides/07_easy/searchform-xhtml.html \
+ 	addressbook-slides/07_easy/addressbook-tac.html
+ 	install -d -m0755 '$(@D)'
+-	cp -ar /usr/share/sgml/docbook/custom/slides/3.2.0/graphics '$(@D)'
+-	cp -ar /usr/share/sgml/docbook/custom/slides/3.2.0/browser '$(@D)'
++	cp -ar /usr/share/xml/docbook/slides/3.4.0/graphics '$(@D)'
++	cp -ar /usr/share/xml/docbook/slides/3.4.0/browser '$(@D)'
+ 	patch '$(@D)/browser/overlay.js' <overlay.js.patch
+ 	cp $(DIAPNG) '$(@D)'
+ 	cp slide-style.css '$(@D)'
+diff --git a/doc/ldap-intro.xml b/doc/ldap-intro.xml
+index 421ffd7..32758bb 100644
+--- a/doc/ldap-intro.xml
++++ b/doc/ldap-intro.xml
+@@ -1,5 +1,5 @@
+ <?xml version='1.0'?>
+-<!DOCTYPE book PUBLIC "-//Norman Walsh//DTD DocBk XML V4.2//EN" "/usr/share/sgml/docbook/dtd/xml/4.2/docbookx.dtd" [
++<!DOCTYPE book PUBLIC "-//Norman Walsh//DTD DocBk XML V4.2//EN" "/usr/share/sgml/docbook/xml-dtd-4.2/docbookx.dtd" [
+ 
+ <!ENTITY ldapentry_vs_oo SYSTEM "ldapentry-vs-oo.xml">
+ <!ENTITY search_inputs SYSTEM "search-inputs.xml">
+diff --git a/doc/slides-driver.xsl b/doc/slides-driver.xsl
+index e9fcbf3..2fc965d 100644
+--- a/doc/slides-driver.xsl
++++ b/doc/slides-driver.xsl
+@@ -1,7 +1,7 @@
+ <?xml version="1.0"?>
+ <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+ 
+-  <xsl:import href="/usr/share/xml/docbook/custom/slides/3.3.1/xsl/xhtml/default.xsl"/>
++  <xsl:import href="/usr/share/xml/docbook/slides/3.4.0/xsl/xhtml/default.xsl"/>
+   <!-- xsl:import href="slides/xsl/default.xsl"/ -->
+ 
+   <xsl:param name="keyboard.nav">1</xsl:param>
