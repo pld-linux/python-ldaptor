@@ -1,4 +1,4 @@
-%global		githash		29a06fa
+%define		githash		29a06fa
 
 Summary:	Python LDAP client library
 Name:		python-ldaptor
