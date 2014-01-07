@@ -1,5 +1,8 @@
+#
+# Conditional build:
+%bcond_with	doc		# build the documentation
+#
 %define		githash		29a06fa
-
 Summary:	Python LDAP client library
 Name:		python-ldaptor
 Version:	0.0.44
@@ -12,7 +15,10 @@ Source1:	global.cfg
 Patch0:		%{name}-remove-webui.patch
 Patch1:		%{name}-doc-paths.patch
 URL:		https://github.com/antong/ldaptor
-BuildRequires:	python-devel
+BuildRequires:	python-distribute
+BuildRequires:	rpm-pythonprov
+BuildRequires:	rpmbuild(macros) >= 1.219
+%if %{with doc}
 BuildRequires:	dia
 BuildRequires:	docbook-slides
 BuildRequires:	docbook-style-xsl
@@ -20,6 +26,8 @@ BuildRequires:	epydoc
 BuildRequires:	libxslt
 BuildRequires:	python-docutils
 BuildRequires:	source-highlight
+%endif
+Requires:	python-modules
 Requires:	python-TwistedCore
 Requires:	python-TwistedNames
 Requires:	python-pyparsing
@@ -64,60 +72,44 @@ rm -f ldaptor/test/test_webui.*
 %patch1 -p1
 
 %build
-%{__make} -C doc
+%{__python} setup.py build
 
+%if %{with doc}
+%{__make} -C doc
 epydoc -o doc/api --name Ldaptor ldaptor --exclude 'ldaptor\.test\.' --simple-term
+%endif
 
 %install
 rm -rf $RPM_BUILD_ROOT
+install -d $RPM_BUILD_ROOT%{_sysconfdir}/ldaptor
 
 %{__python} setup.py install \
 	--root $RPM_BUILD_ROOT
 
-# library system-wide configuration
-install -d $RPM_BUILD_ROOT%{_sysconfdir}/ldaptor
-install %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/ldaptor/
-
-# shared data
-install -d $RPM_BUILD_ROOT%{_datadir}/%{name}
-install ldaptor.schema $RPM_BUILD_ROOT%{_datadir}/%{name}/
-
-# fix permissions on executable files in the library
-chmod a+x $RPM_BUILD_ROOT%{py_sitescriptdir}/ldaptor/ldapfilter.py
-
-# install documentation
-install -d $RPM_BUILD_ROOT%{_docdir}
-install -d $RPM_BUILD_ROOT%{_pkgdocdir}
-for docdir in addressbook-slides api examples ldap-intro; do
-	cp -r doc/$docdir $RPM_BUILD_ROOT%{_pkgdocdir}/
-done
-
-# make *.py files in documentation not executable, rename to avoid byte-compilation
-mv $RPM_BUILD_ROOT%{_pkgdocdir}/examples/ldif2ldif{,.py}
-for pyfile in $(find $RPM_BUILD_ROOT%{_pkgdocdir}/examples -name "*.py"); do
-	chmod a-x $pyfile
-	mv $pyfile $pyfile.example
-done
+# library system-wide configuration and schema
+install -p %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/ldaptor
+install -p ldaptor.schema $RPM_BUILD_ROOT%{_sysconfdir}/ldaptor
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(644,root,root,755)
-%doc COPYING TODO README.md
-%exclude %{_pkgdocdir}/*/
+%doc TODO README.md
 %dir %{_sysconfdir}/ldaptor
 %config(noreplace) %{_sysconfdir}/ldaptor/global.cfg
-%{_datadir}/%{name}/
+%{_sysconfdir}/ldaptor/ldaptor.schema
 %{py_sitescriptdir}/ldaptor-0.0.0-py2.7.egg-info
 %{py_sitescriptdir}/ldaptor
 
+%if %{with doc}
 %files doc
 %defattr(644,root,root,755)
-%doc %{_pkgdocdir}/addressbook-slides/
-%doc %{_pkgdocdir}/api/
-%doc %{_pkgdocdir}/examples/
-%doc %{_pkgdocdir}/ldap-intro/
+%doc doc/addressbook-slides/
+%doc doc/api/
+%doc doc/examples/
+%doc doc/ldap-intro/
+%endif
 
 %files tools
 %defattr(644,root,root,755)
