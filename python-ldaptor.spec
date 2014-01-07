@@ -27,12 +27,12 @@ BuildRequires:	libxslt
 BuildRequires:	python-docutils
 BuildRequires:	source-highlight
 %endif
+Requires:	Zope-Interface
 Requires:	python-modules
-Requires:	python-TwistedCore
-Requires:	python-TwistedNames
 Requires:	python-pyparsing
-Requires:	python-twisted-mail
-Requires:	python-zope-interface
+Requires:	python-TwistedCore
+Requires:	python-TwistedMail
+Requires:	python-TwistedNames
 BuildArch:	noarch
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
