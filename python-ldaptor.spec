@@ -6,7 +6,7 @@
 Summary:	Python LDAP client library
 Name:		python-ldaptor
 Version:	0.0.44
-Release:	0.git%{githash}.0.1
+Release:	0.git%{githash}.1
 License:	LGPLv2
 Group:		Libraries/Python
 Source0:	https://codeload.github.com/antong/ldaptor/tar.gz/%{githash}?/python-ldaptor-%{version}.%{githash}.tar.gz
@@ -71,11 +71,6 @@ library.
 
 %prep
 %setup -q -n ldaptor-%{githash}
-# remove deprecated web interface
-rm -rf ldaptor/apps
-rm -rf ldaptor/weave.*
-rm -rf ldaptor/test/web/
-rm -f ldaptor/test/test_webui.*
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
@@ -84,6 +79,9 @@ rm -f ldaptor/test/test_webui.*
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
+
+# remove deprecated web interface
+%{__rm} -r ldaptor/{apps,weave.*,test/{web,test_webui.*}}
 
 %{__sed} -i -e 's|/usr/share/xml|/usr/share/sgml|g' doc/Makefile doc/slides-driver.xsl
 
@@ -121,10 +119,10 @@ rm -rf $RPM_BUILD_ROOT
 %if %{with doc}
 %files doc
 %defattr(644,root,root,755)
-%doc doc/addressbook-slides/
-%doc doc/api/
-%doc doc/examples/
-%doc doc/ldap-intro/
+%doc doc/addressbook-slides
+%doc doc/api
+%doc doc/examples
+%doc doc/ldap-intro
 %endif
 
 %files tools
