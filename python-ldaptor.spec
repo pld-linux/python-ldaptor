@@ -1,6 +1,6 @@
 #
 # Conditional build:
-%bcond_with	doc		# build the documentation
+%bcond_without	doc		# build the documentation
 #
 %define		githash		29a06fa
 Summary:	Python LDAP client library
@@ -34,11 +34,14 @@ BuildRequires:	python-docutils
 BuildRequires:	source-highlight
 %endif
 Requires:	Zope-Interface
-Requires:	python-modules
-Requires:	python-pyparsing
+Requires:	python-Crypto
 Requires:	python-TwistedCore
+Requires:	python-TwistedCore-ssl
 Requires:	python-TwistedMail
 Requires:	python-TwistedNames
+Requires:	python-modules
+Requires:	python-pyOpenSSL
+Requires:	python-pyparsing
 BuildArch:	noarch
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
@@ -66,7 +69,6 @@ Requires:	%{name} = %{version}-%{release}
 The package contains command line utilities build upon python-ldaptor
 library.
 
-
 %prep
 %setup -q -n ldaptor-%{githash}
 # remove deprecated web interface
@@ -82,6 +84,8 @@ rm -f ldaptor/test/test_webui.*
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
+
+%{__sed} -i -e 's|/usr/share/xml|/usr/share/sgml|g' doc/Makefile doc/slides-driver.xsl
 
 %build
 %{__python} setup.py build
