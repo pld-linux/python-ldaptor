@@ -6,7 +6,7 @@
 Summary:	Python LDAP client library
 Name:		python-ldaptor
 Version:	0.0.44
-Release:	0.git%{githash}.1
+Release:	0.git%{githash}.2
 License:	LGPLv2
 Group:		Libraries/Python
 Source0:	https://codeload.github.com/antong/ldaptor/tar.gz/%{githash}?/python-ldaptor-%{version}.%{githash}.tar.gz
