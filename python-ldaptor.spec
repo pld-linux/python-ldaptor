@@ -86,7 +86,7 @@ library.
 %{__sed} -i -e 's|/usr/share/xml|/usr/share/sgml|g' doc/Makefile doc/slides-driver.xsl
 
 %build
-%{__python} setup.py build
+%py_build
 
 %if %{with doc}
 %{__make} -C doc
@@ -97,7 +97,7 @@ epydoc -o doc/api --name Ldaptor ldaptor --exclude 'ldaptor\.test\.' --simple-te
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT%{_sysconfdir}/ldaptor
 
-%{__python} setup.py install \
+%py_install \
 	--root $RPM_BUILD_ROOT
 
 # library system-wide configuration and schema
