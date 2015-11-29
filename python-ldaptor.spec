@@ -1,15 +1,16 @@
 #
 # Conditional build:
 %bcond_without	doc		# build the documentation
-#
-%define		githash		29a06fa
+
+%define		rel	2
+%define		subver		29a06fa
 Summary:	Python LDAP client library
 Name:		python-ldaptor
 Version:	0.0.44
-Release:	0.git%{githash}.2
+Release:	0.git%{subver}.%{rel}
 License:	LGPLv2
 Group:		Libraries/Python
-Source0:	https://codeload.github.com/antong/ldaptor/tar.gz/%{githash}?/python-ldaptor-%{version}.%{githash}.tar.gz
+Source0:	https://codeload.github.com/antong/ldaptor/tar.gz/%{subver}?/%{name}-%{version}.%{subver}.tar.gz
 # Source0-md5:	eace8cf1dc3f7061051b019444d57ca6
 Source1:	global.cfg
 Patch0:		%{name}-remove-webui.patch
@@ -70,7 +71,7 @@ The package contains command line utilities build upon python-ldaptor
 library.
 
 %prep
-%setup -q -n ldaptor-%{githash}
+%setup -q -n ldaptor-%{subver}
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
@@ -113,7 +114,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_sysconfdir}/ldaptor
 %config(noreplace) %{_sysconfdir}/ldaptor/global.cfg
 %{_sysconfdir}/ldaptor/ldaptor.schema
-%{py_sitescriptdir}/ldaptor-0.0.0-py2.7.egg-info
+%{py_sitescriptdir}/ldaptor-0.0.0-py*.egg-info
 %{py_sitescriptdir}/ldaptor
 
 %if %{with doc}
