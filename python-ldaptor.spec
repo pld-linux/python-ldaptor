@@ -23,7 +23,7 @@ Patch7:		abandon.patch
 URL:		https://github.com/antong/ldaptor
 BuildRequires:	python-distribute
 BuildRequires:	rpm-pythonprov
-BuildRequires:	rpmbuild(macros) >= 1.219
+BuildRequires:	rpmbuild(macros) >= 1.710
 %if %{with doc}
 BuildRequires:	dia
 BuildRequires:	docbook-slides
